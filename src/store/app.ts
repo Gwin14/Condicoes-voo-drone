@@ -46,6 +46,8 @@ type State = {
   droneId: string;
   customDrone: DroneProfile | null;
   altitude: number;
+  /** Máscara de elevação GNSS (graus acima do horizonte). */
+  gnssMask: number;
   location: LocationChoice;
   spots: SavedSpot[];
   showZones: boolean;
@@ -77,6 +79,7 @@ export const useApp = create<State & Actions>()(
       droneId: DEFAULT_DRONE_ID,
       customDrone: null,
       altitude: 100,
+      gnssMask: 10,
       location: { kind: 'gps' },
       spots: [],
       showZones: true,

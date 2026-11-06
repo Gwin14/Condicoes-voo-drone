@@ -78,6 +78,17 @@ export default function RootLayout() {
               }}
             />
             <Stack.Screen name="checklist" options={{ presentation: 'modal', headerShown: false }} />
+            <Stack.Screen
+              name="gnss"
+              options={{
+                title: 'Satélites e interferência',
+                headerBackButtonDisplayMode: 'minimal',
+                headerTintColor: c.accent,
+                headerTitleStyle: { color: c.label },
+                headerStyle: { backgroundColor: c.background },
+                headerShadowVisible: false,
+              }}
+            />
           </Stack>
         </ThemeProvider>
       </QueryClientProvider>

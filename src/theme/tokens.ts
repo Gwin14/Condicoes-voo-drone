@@ -94,6 +94,21 @@ export const type = {
   caption2: { fontSize: 11, lineHeight: 13, fontWeight: '500' as const, letterSpacing: 0.06 },
 };
 
+/**
+ * Cores categóricas das constelações GNSS (validadas para daltonismo nos dois temas
+ * com o validador do skill dataviz). Ordem fixa — nunca reatribuir por ranking.
+ * Sempre acompanhadas de rótulo/letra (G, E, R, C): nunca cor sozinha.
+ */
+export const constellationColors = {
+  light: { gps: '#2a78d6', galileo: '#eb6834', glonass: '#6250d6', beidou: '#e87ba4' },
+  dark: { gps: '#3987e5', galileo: '#d95926', glonass: '#9085e9', beidou: '#d55181' },
+} as const;
+
+export function useConstellationColors() {
+  const { isDark } = useTheme();
+  return isDark ? constellationColors.dark : constellationColors.light;
+}
+
 export type Verdict = 'go' | 'caution' | 'nogo';
 
 export function verdictColor(p: Palette, v: Verdict) {

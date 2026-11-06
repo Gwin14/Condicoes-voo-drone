@@ -17,6 +17,8 @@ export const factorIcon: Record<FactorId, IconName> = {
   daylight: 'sun',
   storm: 'bolt',
   airspace: 'airport',
+  satellites: 'satellite',
+  ionosphere: 'radio',
 };
 
 export function FactorsCard({ factors }: { factors: Factor[] }) {

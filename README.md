@@ -9,6 +9,13 @@ App em React Native + Expo (SDK 58, Expo Router) que diz se dá para voar agora,
 - Fatores explicados um a um: vento e rajadas na altitude planejada, chuva, visibilidade (VLOS), base de nuvens estimada, temperatura da bateria, índice Kp (GNSS), luz do dia, instabilidade (CAPE) e espaço aéreo.
 - Faixa das próximas 24 h, **janelas de tempo ideal** nas próximas 48 h com alerta 30 min antes, perfil de vento por altitude (10/80/120/180 m interpolados), autonomia útil estimada, altitude-densidade, UV, luz e METAR decodificado dos aeródromos próximos.
 
+**Satélites e interferência**
+- Satélites GNSS visíveis agora e nas próximas 24 h (GPS, Galileo, GLONASS e BeiDou), calculados a partir das órbitas publicadas pela CelesTrak, com carta do céu (skyplot), contagem por constelação, PDOP/HDOP e máscara de elevação ajustável.
+- Cintilação ionosférica estimada (bolhas de plasma após o pôr do sol na Anomalia Equatorial, forte sobre o Brasil de setembro a março).
+- Clima espacial da NOAA: escalas R (rádio/erupções solares), S (radiação) e G (geomagnética), previsão de 3 dias, fluxo solar F10.7 e Kp observado/previsto.
+- Dicas de interferência local (linhas de energia, torres, Wi-Fi 2,4/5,8 GHz, metal, radares).
+- Satélites e ionosfera entram no score de voo.
+
 **Mapa** — zonas estimadas de aeródromos, pontos de voo salvos e condições de qualquer ponto (mantenha pressionado). Usa `react-native-maps`, que já vem no Expo Go.
 
 **Previsão** — tabela horária no estilo go/no-go (FlashList) e visão de 7 dias com as horas boas de cada dia.
@@ -72,7 +79,8 @@ src/widgets/        widgets e Live Activity (@expo/ui + diretiva 'widget')
 ## Fontes de dados (sem chave de API)
 
 - [Open-Meteo](https://open-meteo.com): previsão horária, vento em altitude e geocodificação
-- [NOAA SWPC](https://www.swpc.noaa.gov): índice Kp planetário
+- [NOAA SWPC](https://www.swpc.noaa.gov): índice Kp, escalas R/S/G e fluxo solar
 - [aviationweather.gov](https://aviationweather.gov): METAR
+- [CelesTrak](https://celestrak.org): elementos orbitais das constelações GNSS
 
 > As zonas de aeródromo são estimativas por distância. A autorização oficial é sempre a do DECEA, pelo SARPAS NG.

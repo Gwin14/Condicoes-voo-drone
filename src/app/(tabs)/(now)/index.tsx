@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
+import { GnssCard } from '@/components/gnss/GnssCard';
 import { AirspaceCard } from '@/components/now/AirspaceCard';
 import { FactorsCard } from '@/components/now/FactorsCard';
 import { HeroCard } from '@/components/now/HeroCard';
@@ -131,6 +132,11 @@ export default function NowScreen() {
         </View>
 
         <View>
+          <SectionHeader title="Satélites e interferência" icon="satellite" action="Detalhes" onAction={() => router.push('/gnss')} />
+          <GnssCard lat={data.forecast.lat} lon={data.forecast.lon} elevation={data.forecast.elevation} kp={data.now.kp} />
+        </View>
+
+        <View>
           <SectionHeader title="Vento por altitude" icon="altitude" />
           <WindProfileCard hour={data.forecast.current} drone={drone} altitude={altitude} unit={unit} />
         </View>
@@ -153,7 +159,7 @@ export default function NowScreen() {
         <Card style={{ backgroundColor: 'transparent', paddingHorizontal: space.xs }}>
           <T v="caption" tone="tertiary">
             O Teto é uma ferramenta de apoio. Antes de voar, confirme a autorização no SARPAS (DECEA), o cadastro no SISANT
-            (ANAC) e a homologação na Anatel. Dados: Open-Meteo, NOAA SWPC e aviationweather.gov.
+            (ANAC) e a homologação na Anatel. Dados: Open-Meteo, NOAA SWPC, CelesTrak e aviationweather.gov.
           </T>
         </Card>
       </View>

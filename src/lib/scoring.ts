@@ -14,7 +14,9 @@ export type FactorId =
   | 'kp'
   | 'daylight'
   | 'storm'
-  | 'airspace';
+  | 'airspace'
+  | 'satellites'
+  | 'ionosphere';
 
 export type Factor = {
   id: FactorId;
@@ -34,6 +36,7 @@ export type HourScore = {
   dirAlt: number;
   cloudBase: number;
   kp: number;
+  gnss?: GnssInput;
   factors: Factor[];
 };
 
@@ -69,14 +72,23 @@ export function cloudBaseMeters(h: Hour) {
 
 export type AirspaceInput = { status: 'clear' | 'caution' | 'critical'; icao?: string; distanceM?: number };
 
+/** Satélites visíveis (céu aberto, acima da máscara) e geometria estimada. */
+export type GnssInput = { visible: number; gps: number; pdop: number };
+
+/** Clima espacial: cintilação estimada e escalas NOAA de rádio (R) e radiação (S). */
+export type SpaceInput = { scint: 'baixo' | 'moderado' | 'alto'; scintReason: string; r: number; s: number };
+
+export type ExtraInputs = { airspace?: AirspaceInput; gnss?: GnssInput; space?: SpaceInput };
+
 export function scoreHour(
   h: Hour,
   drone: DroneProfile,
   altitude: number,
   kp: number,
   fmtWind: (kmh: number) => string,
-  airspace?: AirspaceInput
+  extra: ExtraInputs = {}
 ): HourScore {
+  const { airspace, gnss, space } = extra;
   const factors: Factor[] = [];
   const w = windAtAltitude(h, altitude);
   // Rajadas em altitude: escala a rajada de 10 m pelo gradiente do vento médio.
@@ -252,6 +264,52 @@ export function scoreHour(
     detail: `Kp ${kp.toFixed(1).replace('.', ',')} · ${kpLabel(kp)}`,
   });
 
+  // Satélites GNSS disponíveis (contagem e geometria em céu aberto)
+  if (gnss) {
+    let pn = 0;
+    let sn: Verdict = 'go';
+    if (gnss.visible < 6 || gnss.pdop > 6) {
+      pn = 40;
+      sn = 'nogo';
+    } else if (gnss.visible < 12 || gnss.pdop > 3) {
+      pn = 12;
+      sn = 'caution';
+    } else if (gnss.pdop > 2) {
+      pn = 4;
+    }
+    factors.push({
+      id: 'satellites',
+      label: 'Satélites',
+      status: sn,
+      penalty: pn,
+      detail: `${gnss.visible} visíveis (${gnss.gps} GPS) · PDOP ${Number.isFinite(gnss.pdop) ? gnss.pdop.toFixed(1).replace('.', ',') : '—'}`,
+    });
+  }
+
+  // Ionosfera e rádio (cintilação, erupções solares, radiação)
+  if (space) {
+    let pi = 0;
+    let si: Verdict = 'go';
+    const parts: string[] = [`Cintilação ${space.scint}`];
+    if (space.scint === 'alto') {
+      pi += 14;
+      si = 'caution';
+    } else if (space.scint === 'moderado') {
+      pi += 5;
+    }
+    if (space.r >= 3) {
+      pi += 12;
+      si = 'caution';
+    } else if (space.r >= 1) pi += 3;
+    if (space.s >= 3) {
+      pi += 6;
+      si = 'caution';
+    }
+    if (space.r > 0) parts.push(`rádio R${space.r}`);
+    if (space.s > 0) parts.push(`radiação S${space.s}`);
+    factors.push({ id: 'ionosphere', label: 'Ionosfera', status: si, penalty: pi, detail: parts.join(' · ') });
+  }
+
   // Luz do dia
   factors.push({
     id: 'daylight',
@@ -293,6 +351,7 @@ export function scoreHour(
     dirAlt: w.dir,
     cloudBase: base,
     kp,
+    gnss,
     factors: factors.sort((a, b) => b.penalty - a.penalty),
   };
 }

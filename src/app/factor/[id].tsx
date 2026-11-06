@@ -4,7 +4,7 @@ import { ScrollView, View } from 'react-native';
 import { Icon } from '@/components/Icon';
 import { factorIcon } from '@/components/now/FactorsCard';
 import { SheetHeader } from '@/components/SheetHeader';
-import { Card, StatusPill, T } from '@/components/ui';
+import { Button, Card, StatusPill, T } from '@/components/ui';
 import { useConditions } from '@/hooks/useConditions';
 import { useActiveLocation } from '@/hooks/useLocation';
 import { fmtSpeed } from '@/lib/format';
@@ -57,6 +57,24 @@ const COPY: Record<FactorId, { title: string; why: string; tips: string[] }> = {
     title: 'Luz do dia',
     why: 'Voo noturno exige luzes de navegação no drone e, dependendo da operação, autorização específica no SARPAS.',
     tips: ['Hora dourada e hora azul rendem as melhores imagens.', 'Ative as luzes de posição do drone ao entardecer.'],
+  },
+  satellites: {
+    title: 'Satélites disponíveis',
+    why: 'O drone precisa de satélites suficientes e bem distribuídos no céu para manter a posição, segurar o pairado e voltar ao ponto Home. O Teto calcula quantos satélites GPS, Galileo, GLONASS e BeiDou estão acima da máscara de elevação e a diluição de precisão (PDOP): quanto menor, melhor.',
+    tips: [
+      'Os números são para céu aberto: prédios, morros e árvores bloqueiam parte do céu.',
+      'Espere o drone confirmar 10 ou mais satélites e gravar o Home antes de decolar.',
+      'PDOP acima de 3 indica geometria ruim — o pairado pode derivar.',
+    ],
+  },
+  ionosphere: {
+    title: 'Ionosfera e rádio',
+    why: 'O Brasil fica sob a Anomalia de Ionização Equatorial. Depois do pôr do sol, principalmente de setembro a março, surgem bolhas de plasma que fazem o sinal dos satélites cintilar: o receptor perde satélites e a precisão cai. Erupções solares (escala R da NOAA) também degradam sinais de rádio no lado iluminado da Terra.',
+    tips: [
+      'Prefira voar de dia em temporada de cintilação; entre 20h e 0h o risco é maior.',
+      'Com cintilação alta, mantenha o drone próximo e esteja pronto para o modo ATTI.',
+      'Escala R3 ou maior: espere instabilidade no GNSS e no link de rádio.',
+    ],
   },
   airspace: {
     title: 'Espaço aéreo',
@@ -126,6 +144,17 @@ export default function FactorSheet() {
           </Card>
         ) : null}
         <T v="body">{copy.why}</T>
+        {id === 'satellites' || id === 'ionosphere' || id === 'kp' ? (
+          <Button
+            title="Ver satélites e interferências"
+            kind="secondary"
+            icon="satellite"
+            onPress={() => {
+              router.back();
+              setTimeout(() => router.push('/gnss'), 250);
+            }}
+          />
+        ) : null}
         <View style={{ gap: space.md }}>
           {copy.tips.map((t) => (
             <View key={t} style={{ flexDirection: 'row', gap: space.md }}>

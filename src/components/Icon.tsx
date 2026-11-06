@@ -76,6 +76,11 @@ const MAP = {
   edit: { ios: 'slider.horizontal.3', md: 'tune' },
   route: { ios: 'point.topleft.down.to.point.bottomright.curvepath.fill', md: 'route' },
   people: { ios: 'person.2.fill', md: 'group' },
+  radio: { ios: 'dot.radiowaves.left.and.right', md: 'cell_tower' },
+  globe: { ios: 'globe.americas.fill', md: 'public' },
+  sunStorm: { ios: 'sun.max.trianglebadge.exclamationmark', md: 'flare' },
+  wifi: { ios: 'wifi.exclamationmark', md: 'wifi_off' },
+  powerline: { ios: 'bolt.horizontal.fill', md: 'electric_bolt' },
 } as const;
 
 export type IconName = keyof typeof MAP;
