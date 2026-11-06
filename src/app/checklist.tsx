@@ -14,37 +14,22 @@ import { verdictLabel } from '@/lib/scoring';
 import { useApp } from '@/store/app';
 import { space, useTheme } from '@/theme/tokens';
 
-type Item = { id: string; label: string; hint?: string; required?: boolean };
+type Item = { id: string; label: string; hint?: string };
 
-const GROUPS: { title: string; items: Item[] }[] = [
-  {
-    title: 'Documentação',
-    items: [
-      { id: 'sarpas', label: 'Solicitação no SARPAS aprovada', hint: 'Ou operação enquadrada nas regras sem solicitação', required: true },
-      { id: 'sisant', label: 'Drone cadastrado no SISANT (ANAC)', hint: 'Obrigatório acima de 250 g' },
-      { id: 'seguro', label: 'Seguro RETA válido', hint: 'Obrigatório para uso não recreativo acima de 250 g' },
-    ],
-  },
-  {
-    title: 'Aeronave',
-    items: [
-      { id: 'baterias', label: 'Baterias carregadas e aquecidas', required: true },
-      { id: 'helices', label: 'Hélices sem trincas e bem presas', required: true },
-      { id: 'firmware', label: 'Firmware e mapas atualizados' },
-      { id: 'cartao', label: 'Cartão de memória com espaço' },
-      { id: 'home', label: 'Ponto de retorno (Home) gravado', required: true },
-      { id: 'rth', label: 'Altura de RTH acima dos obstáculos', required: true },
-    ],
-  },
-  {
-    title: 'Ambiente',
-    items: [
-      { id: 'area', label: 'Área de decolagem livre e plana', required: true },
-      { id: 'pessoas', label: 'Distância segura de pessoas não anuentes', hint: 'Mínimo de 30 m (ANAC)', required: true },
-      { id: 'obstaculos', label: 'Fios, antenas e árvores mapeados' },
-      { id: 'vlos', label: 'Linha de visada garantida (VLOS)', required: true },
-    ],
-  },
+/** Uma vez só: valem para o drone, não para o voo. Não travam a decolagem. */
+const SETUP: (Item & { over250?: boolean })[] = [
+  { id: 'sisant', label: 'Drone cadastrado no SISANT (ANAC)', over250: true },
+  { id: 'seguro', label: 'Seguro RETA válido', hint: 'Uso não recreativo', over250: true },
+  { id: 'anatel', label: 'Drone homologado na Anatel' },
+];
+
+/** A cada voo: o essencial, todos obrigatórios para decolar. */
+const FLIGHT: Item[] = [
+  { id: 'sarpas', label: 'Voo autorizado no SARPAS NG', hint: 'Obrigatório para qualquer drone desde 1º/07/2026' },
+  { id: 'aeronave', label: 'Baterias carregadas e hélices inteiras' },
+  { id: 'area', label: 'Área livre e pessoas a mais de 30 m' },
+  { id: 'home', label: 'Home gravado e RTH acima dos obstáculos' },
+  { id: 'vlos', label: 'Drone sempre à vista (VLOS)' },
 ];
 
 export default function ChecklistScreen() {
@@ -53,15 +38,18 @@ export default function ChecklistScreen() {
   const checks = useApp((s) => s.checklist);
   const toggle = useApp((s) => s.toggleCheck);
   const reset = useApp((s) => s.resetChecklist);
+  const checkAll = useApp((s) => s.checkAll);
+  const setup = useApp((s) => s.setupChecks);
+  const toggleSetup = useApp((s) => s.toggleSetup);
   const { location } = useActiveLocation();
   const { data, drone } = useConditions(location?.lat, location?.lon);
   const [starting, setStarting] = useState(false);
 
-  const all = GROUPS.flatMap((g) => g.items);
-  const required = all.filter((i) => i.required);
-  const doneRequired = required.filter((i) => checks[i.id]).length;
-  const done = all.filter((i) => checks[i.id]).length;
-  const ready = doneRequired === required.length && !!data && !!location;
+  const setupItems = SETUP.filter((i) => !i.over250 || drone.weightG > 250);
+  const setupDone = setupItems.every((i) => setup[i.id]);
+  const [editSetup, setEditSetup] = useState(!setupDone);
+  const done = FLIGHT.filter((i) => checks[i.id]).length;
+  const ready = done === FLIGHT.length && !!data && !!location;
 
   const takeoff = async () => {
     if (!data || !location || starting) return;
@@ -87,56 +75,60 @@ export default function ChecklistScreen() {
           </Card>
         ) : null}
 
-        {GROUPS.map((g) => (
-          <View key={g.title} style={{ gap: space.sm }}>
-            <T v="footnote" tone="secondary" style={{ paddingHorizontal: space.xs, textTransform: 'uppercase' }}>
-              {g.title}
+        {/* ----------------------------------------------------- Neste voo */}
+        <View style={{ gap: space.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.xs }}>
+            <T v="footnote" tone="secondary" style={{ flex: 1, textTransform: 'uppercase' }}>
+              Neste voo
             </T>
-            <Card padded={false}>
-              {g.items.map((it, i) => {
-                const on = !!checks[it.id];
-                return (
-                  <Pressable
-                    key={it.id}
-                    onPress={() => {
-                      Haptics.selectionAsync().catch(() => {});
-                      toggle(it.id);
-                    }}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: on }}>
-                    {({ pressed }) => (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingLeft: space.lg, backgroundColor: pressed ? c.fill : 'transparent' }}>
-                        <Icon name={on ? 'check' : 'circle'} size={24} color={on ? c.go : c.tertiary} />
-                        <View
-                          style={{
-                            flex: 1,
-                            paddingVertical: space.md,
-                            paddingRight: space.lg,
-                            borderBottomWidth: i === g.items.length - 1 ? 0 : 0.5,
-                            borderBottomColor: c.separator,
-                            gap: 2,
-                          }}>
-                          <T v="body" tone={on ? 'secondary' : 'label'}>
-                            {it.label}
-                            {it.required ? <T v="body" tone="nogo">{' *'}</T> : null}
-                          </T>
-                          {it.hint ? (
-                            <T v="footnote" tone="tertiary">
-                              {it.hint}
-                            </T>
-                          ) : null}
-                        </View>
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </Card>
+            {done < FLIGHT.length ? (
+              <Pressable
+                hitSlop={10}
+                onPress={() => {
+                  Haptics.selectionAsync().catch(() => {});
+                  checkAll(FLIGHT.map((i) => i.id));
+                }}
+                accessibilityRole="button">
+                <T v="footnote" tone="accent" style={{ fontWeight: '600' }}>
+                  Marcar tudo
+                </T>
+              </Pressable>
+            ) : null}
           </View>
-        ))}
-        <T v="caption" tone="tertiary" style={{ paddingHorizontal: space.xs }}>
-          * Itens obrigatórios para liberar a decolagem no app.
-        </T>
+          <Card padded={false}>
+            {FLIGHT.map((it, i) => (
+              <CheckRow key={it.id} item={it} on={!!checks[it.id]} last={i === FLIGHT.length - 1} onPress={() => toggle(it.id)} />
+            ))}
+          </Card>
+        </View>
+
+        {/* ------------------------------------------------ Uma vez só */}
+        {setupItems.length > 0 ? (
+          setupDone && !editSetup ? (
+            <Pressable onPress={() => setEditSetup(true)} accessibilityRole="button" accessibilityLabel="Editar documentação do drone">
+              <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                <Icon name="check" size={20} color={c.go} />
+                <T v="subhead" tone="secondary" style={{ flex: 1 }}>
+                  Documentação do drone em dia
+                </T>
+                <T v="subhead" tone="accent">
+                  Editar
+                </T>
+              </Card>
+            </Pressable>
+          ) : (
+            <View style={{ gap: space.sm }}>
+              <T v="footnote" tone="secondary" style={{ paddingHorizontal: space.xs, textTransform: 'uppercase' }}>
+                Uma vez só · fica salvo
+              </T>
+              <Card padded={false}>
+                {setupItems.map((it, i) => (
+                  <CheckRow key={it.id} item={it} on={!!setup[it.id]} last={i === setupItems.length - 1} onPress={() => toggleSetup(it.id)} />
+                ))}
+              </Card>
+            </View>
+          )
+        ) : null}
       </ScrollView>
 
       <View
@@ -154,10 +146,47 @@ export default function ChecklistScreen() {
           gap: space.sm,
         }}>
         <T v="footnote" tone="secondary" num style={{ textAlign: 'center' }}>
-          {doneRequired} de {required.length} obrigatórios · {done} de {all.length} no total
+          {done} de {FLIGHT.length} itens deste voo
         </T>
         <Button title="Decolar" icon="flight" onPress={takeoff} disabled={!ready} loading={starting} />
       </View>
     </View>
+  );
+}
+
+function CheckRow({ item, on, last, onPress }: { item: Item; on: boolean; last: boolean; onPress: () => void }) {
+  const { c } = useTheme();
+  return (
+    <Pressable
+      onPress={() => {
+        Haptics.selectionAsync().catch(() => {});
+        onPress();
+      }}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: on }}>
+      {({ pressed }) => (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, paddingLeft: space.lg, backgroundColor: pressed ? c.fill : 'transparent' }}>
+          <Icon name={on ? 'check' : 'circle'} size={24} color={on ? c.go : c.tertiary} />
+          <View
+            style={{
+              flex: 1,
+              paddingVertical: space.md,
+              paddingRight: space.lg,
+              borderBottomWidth: last ? 0 : 0.5,
+              borderBottomColor: c.separator,
+              gap: 2,
+            }}>
+            <T v="body" tone={on ? 'secondary' : 'label'}>
+              {item.label}
+            </T>
+            {item.hint ? (
+              <T v="footnote" tone="tertiary">
+                {item.hint}
+              </T>
+            ) : null}
+          </View>
+        </View>
+      )}
+    </Pressable>
   );
 }

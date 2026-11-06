@@ -55,7 +55,10 @@ type State = {
   scheduledWindowAlerts: Record<string, string>;
   session: FlightSession | null;
   flights: FlightLog[];
+  /** Itens do voo atual: zeram ao terminar o voo. */
   checklist: Record<string, boolean>;
+  /** Itens que valem para sempre (cadastro, seguro): marcados uma vez só. */
+  setupChecks: Record<string, boolean>;
 };
 
 type Actions = {
@@ -67,6 +70,8 @@ type Actions = {
   removeFlight: (id: string) => void;
   toggleCheck: (id: string) => void;
   resetChecklist: () => void;
+  checkAll: (ids: string[]) => void;
+  toggleSetup: (id: string) => void;
 };
 
 const uid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
@@ -88,6 +93,7 @@ export const useApp = create<State & Actions>()(
       session: null,
       flights: [],
       checklist: {},
+      setupChecks: {},
 
       set: (key, value) => set({ [key]: value } as Partial<State>),
       addSpot: (s) => {
@@ -111,6 +117,8 @@ export const useApp = create<State & Actions>()(
       removeFlight: (id) => set({ flights: get().flights.filter((f) => f.id !== id) }),
       toggleCheck: (id) => set({ checklist: { ...get().checklist, [id]: !get().checklist[id] } }),
       resetChecklist: () => set({ checklist: {} }),
+      checkAll: (ids) => set({ checklist: { ...get().checklist, ...Object.fromEntries(ids.map((id) => [id, true])) } }),
+      toggleSetup: (id) => set({ setupChecks: { ...get().setupChecks, [id]: !get().setupChecks[id] } }),
     }),
     {
       name: 'teto-app-v1',
