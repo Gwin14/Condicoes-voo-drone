@@ -10,8 +10,10 @@ export type DroneProfile = {
   maxWind: number;
   /** Autonomia nominal em minutos (bateria padrão, sem vento). */
   flightTime: number;
-  /** Velocidade de cruzeiro (modo normal) em km/h. */
+  /** Velocidade de cruzeiro (modo normal) em km/h. Usada no cálculo de retorno (RTH). */
   cruiseSpeed: number;
+  /** false = o fabricante não publica a velocidade do modo normal (valor aproximado). Perfis do usuário não usam. */
+  cruiseOfficial?: boolean;
   weightG: number;
   minTemp: number;
   maxTemp: number;
@@ -27,7 +29,8 @@ export const DRONES: DroneProfile[] = [
     brand: 'DJI',
     maxWind: 38,
     flightTime: 34,
-    cruiseSpeed: 36,
+    cruiseSpeed: 43, // 12 m/s (modo N)
+    cruiseOfficial: true,
     weightG: 249,
     minTemp: -10,
     maxTemp: 40,
@@ -41,6 +44,7 @@ export const DRONES: DroneProfile[] = [
     maxWind: 43,
     flightTime: 36,
     cruiseSpeed: 36,
+    cruiseOfficial: false,
     weightG: 249,
     minTemp: -10,
     maxTemp: 40,
@@ -54,6 +58,7 @@ export const DRONES: DroneProfile[] = [
     maxWind: 38,
     flightTime: 38,
     cruiseSpeed: 36,
+    cruiseOfficial: false,
     weightG: 248,
     minTemp: -10,
     maxTemp: 40,
@@ -67,8 +72,23 @@ export const DRONES: DroneProfile[] = [
     maxWind: 43,
     flightTime: 45,
     cruiseSpeed: 43,
+    cruiseOfficial: false,
     weightG: 724,
     minTemp: -10,
+    maxTemp: 40,
+    rainProof: false,
+    category: 'consumer',
+  },
+  {
+    id: 'air2s',
+    name: 'Air 2S',
+    brand: 'DJI',
+    maxWind: 38, // 10,7 m/s
+    flightTime: 31,
+    cruiseSpeed: 54, // 15 m/s (modo N)
+    cruiseOfficial: true,
+    weightG: 595,
+    minTemp: 0,
     maxTemp: 40,
     rainProof: false,
     category: 'consumer',
@@ -80,6 +100,7 @@ export const DRONES: DroneProfile[] = [
     maxWind: 43,
     flightTime: 51,
     cruiseSpeed: 43,
+    cruiseOfficial: false,
     weightG: 1063,
     minTemp: -10,
     maxTemp: 40,
@@ -93,6 +114,7 @@ export const DRONES: DroneProfile[] = [
     maxWind: 43,
     flightTime: 43,
     cruiseSpeed: 43,
+    cruiseOfficial: false,
     weightG: 958,
     minTemp: -10,
     maxTemp: 40,
@@ -105,7 +127,8 @@ export const DRONES: DroneProfile[] = [
     brand: 'DJI',
     maxWind: 38,
     flightTime: 23,
-    cruiseSpeed: 43,
+    cruiseSpeed: 29, // 8 m/s (modo Normal)
+    cruiseOfficial: true,
     weightG: 377,
     minTemp: -10,
     maxTemp: 40,
@@ -118,9 +141,10 @@ export const DRONES: DroneProfile[] = [
     brand: 'DJI',
     maxWind: 29,
     flightTime: 18,
-    cruiseSpeed: 29,
+    cruiseSpeed: 22, // 6 m/s (modo Normal)
+    cruiseOfficial: true,
     weightG: 135,
-    minTemp: 0,
+    minTemp: -10,
     maxTemp: 40,
     rainProof: false,
     category: 'mini',
@@ -129,9 +153,10 @@ export const DRONES: DroneProfile[] = [
     id: 'evo2pro',
     name: 'EVO II Pro V3',
     brand: 'Autel',
-    maxWind: 43,
+    maxWind: 61, // nível 8 (~17 m/s), ficha da Autel
     flightTime: 40,
     cruiseSpeed: 43,
+    cruiseOfficial: false,
     weightG: 1191,
     minTemp: -10,
     maxTemp: 40,
@@ -144,7 +169,8 @@ export const DRONES: DroneProfile[] = [
     brand: 'DJI',
     maxWind: 43,
     flightTime: 49,
-    cruiseSpeed: 54,
+    cruiseSpeed: 32, // 9 m/s, velocidade do teste de autonomia
+    cruiseOfficial: true,
     weightG: 1219,
     minTemp: -10,
     maxTemp: 40,
@@ -158,7 +184,8 @@ export const DRONES: DroneProfile[] = [
     // DJI: resistência máxima ao vento de 12 m/s.
     maxWind: 43,
     flightTime: 55,
-    cruiseSpeed: 61,
+    cruiseSpeed: 29, // 8 m/s, velocidade do teste de autonomia
+    cruiseOfficial: true,
     weightG: 6470,
     minTemp: -20,
     maxTemp: 50,
@@ -172,6 +199,7 @@ export const DRONES: DroneProfile[] = [
     maxWind: 50,
     flightTime: 6,
     cruiseSpeed: 80,
+    cruiseOfficial: false,
     weightG: 650,
     minTemp: -5,
     maxTemp: 40,

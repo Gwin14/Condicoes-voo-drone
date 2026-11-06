@@ -109,7 +109,7 @@ export default function ReturnScreen() {
 
       <Card style={{ gap: space.md }}>
         <Line label="Drone" value={`${drone.brand} ${drone.name}`} />
-        <Line label="Velocidade de cruzeiro" value={fmtSpeed(drone.cruiseSpeed, unit)} />
+        <Line label={drone.cruiseOfficial === false ? 'Velocidade de cruzeiro (aprox.)' : 'Velocidade de cruzeiro'} value={fmtSpeed(drone.cruiseSpeed, unit)} />
         <Line label={`Vento a ${altitude} m`} value={fmtSpeed(wind, unit)} />
         <Line label="Velocidade no solo (retorno)" value={ground > 0 ? fmtSpeed(ground, unit) : 'parado'} warn={ground < drone.cruiseSpeed * 0.4} />
         <Line label="Autonomia ajustada" value={`${Math.round(fullMin)} min`} />
