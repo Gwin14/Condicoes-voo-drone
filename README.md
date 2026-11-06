@@ -11,12 +11,12 @@ App em React Native + Expo (SDK 58, Expo Router) que diz se dá para voar agora,
 
 **Satélites e interferência**
 - Satélites GNSS visíveis agora e nas próximas 24 h (GPS, Galileo, GLONASS e BeiDou), calculados a partir das órbitas publicadas pela CelesTrak, com carta do céu (skyplot), contagem por constelação, PDOP/HDOP e máscara de elevação ajustável.
-- Cintilação ionosférica estimada (bolhas de plasma após o pôr do sol na Anomalia Equatorial, forte sobre o Brasil de setembro a março).
+- Cintilação ionosférica **medida** (índice S4 dos mapas do EMBRACE/INPE, atualizados a cada minuto). Não há previsão oficial, então ela só entra na hora atual. Funciona no app nativo; o servidor do INPE bloqueia navegadores (CORS).
 - Clima espacial da NOAA: escalas R (rádio/erupções solares), S (radiação) e G (geomagnética), previsão de 3 dias, fluxo solar F10.7 e Kp observado/previsto.
 - Dicas de interferência local (linhas de energia, torres, Wi-Fi 2,4/5,8 GHz, metal, radares).
 - Satélites e ionosfera entram no score de voo.
 
-**Mapa** — zonas estimadas de aeródromos, pontos de voo salvos e condições de qualquer ponto (mantenha pressionado). Usa `react-native-maps`, que já vem no Expo Go.
+**Mapa** — aeródromos do cadastro oficial da ANAC com os afastamentos do DECEA (3 NM até 30 m, 5 NM até 120 m), pontos de voo salvos e condições de qualquer ponto (mantenha pressionado). Usa `react-native-maps`, que já vem no Expo Go.
 
 **Previsão** — tabela horária no estilo go/no-go (FlashList) e visão de 7 dias com as horas boas de cada dia.
 
@@ -80,7 +80,16 @@ src/widgets/        widgets e Live Activity (@expo/ui + diretiva 'widget')
 
 - [Open-Meteo](https://open-meteo.com): previsão horária, vento em altitude e geocodificação
 - [NOAA SWPC](https://www.swpc.noaa.gov): índice Kp, escalas R/S/G e fluxo solar
-- [aviationweather.gov](https://aviationweather.gov): METAR
+- [aviationweather.gov](https://aviationweather.gov): METAR e as bases militares que não constam na ANAC
 - [CelesTrak](https://celestrak.org): elementos orbitais das constelações GNSS
+- [ANAC — dados abertos](https://www.gov.br/anac/pt-br/acesso-a-informacao/dados-abertos): cadastro de aeródromos públicos e privados
+- [EMBRACE/INPE](https://embracedata.inpe.br/scintillation/maps/readme_scintillation_maps.html): mapas de cintilação S4 (redes INPE, IBGE, INCT GNSS-NavAer/UNESP e NSSC/CAS)
+- [DECEA — Central de Ajuda](https://ajuda.decea.mil.br/artigos/qual-a-altura-e-distancia-ideal-de-aeroportos-e-heliportos-para-um-voo-de-drone): afastamento mínimo de aeródromos (ICA 100-40)
 
-> As zonas de aeródromo são estimativas por distância. A autorização oficial é sempre a do DECEA, pelo SARPAS NG.
+O app traz um snapshot do cadastro da ANAC em `src/data/aerodromes.json` (funciona offline e na web) e, no celular, baixa a versão atual da ANAC uma vez por semana. Para atualizar o snapshot:
+
+```bash
+npm run update:aerodromes
+```
+
+> Helipontos não estão no mapa. A autorização oficial é sempre a do DECEA, pelo SARPAS NG.

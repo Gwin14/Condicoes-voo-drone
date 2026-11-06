@@ -58,7 +58,7 @@ export function MetricsGrid({ data, tempUnit }: { data: Conditions; tempUnit: Te
     {
       icon: 'mountain',
       label: 'Altitude-densidade',
-      value: fmtDistance(Math.max(0, data.densityAlt)),
+      value: Number.isFinite(data.densityAlt) ? fmtDistance(Math.max(0, data.densityAlt)) : '—',
       note: data.densityAlt > 1500 ? 'Menos sustentação' : `Elevação ${Math.round(data.forecast.elevation)} m`,
     },
     {

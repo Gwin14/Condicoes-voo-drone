@@ -7,6 +7,11 @@ import { space, useTheme } from '@/theme/tokens';
 
 const RULES: { icon: IconName; title: string; body: string }[] = [
   {
+    icon: 'check',
+    title: 'Autorização no SARPAS NG para todo voo',
+    body: 'Pela nova ICA 100-40 (Portaria DECEA nº 2.094/DNOR8, em vigor desde 1º de julho de 2026), qualquer drone precisa de autorização prévia no SARPAS NG, inclusive os abaixo de 250 g.',
+  },
+  {
     icon: 'altitude',
     title: 'Até 120 m (400 ft) acima do solo',
     body: 'É a altura máxima usual para operações sem autorização especial do DECEA. Acima disso, a operação precisa de análise específica.',
@@ -24,7 +29,7 @@ const RULES: { icon: IconName; title: string; body: string }[] = [
   {
     icon: 'airport',
     title: 'Longe de aeródromos e helipontos',
-    body: 'Áreas de aproximação e decolagem têm restrições. Confira sempre no SARPAS NG antes do voo — o mapa do Teto é só uma estimativa.',
+    body: 'Até 30 m de altura, fique a pelo menos 3 NM (5,6 km) do aeródromo; entre 30 e 120 m, a 5 NM (9,3 km), segundo o DECEA. O mapa do Teto usa o cadastro de aeródromos da ANAC, mas não inclui helipontos: confira sempre no SARPAS NG.',
   },
   {
     icon: 'drone',

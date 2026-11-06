@@ -2,6 +2,7 @@ import type { Verdict } from '@/theme/tokens';
 
 import type { DroneProfile } from './drones';
 import { clamp } from './format';
+import type { ScintReading } from './spaceWeather';
 import type { Hour } from './weather';
 
 export type FactorId =
@@ -75,8 +76,8 @@ export type AirspaceInput = { status: 'clear' | 'caution' | 'critical'; icao?: s
 /** Satélites visíveis (céu aberto, acima da máscara) e geometria estimada. */
 export type GnssInput = { visible: number; gps: number; pdop: number };
 
-/** Clima espacial: cintilação estimada e escalas NOAA de rádio (R) e radiação (S). */
-export type SpaceInput = { scint: 'baixo' | 'moderado' | 'alto'; scintReason: string; r: number; s: number };
+/** Clima espacial: cintilação medida pelo INPE (só na hora corrente) e escalas NOAA de rádio (R) e radiação (S). */
+export type SpaceInput = { scint: ScintReading | null; r: number; s: number };
 
 export type ExtraInputs = { airspace?: AirspaceInput; gnss?: GnssInput; space?: SpaceInput };
 
@@ -196,7 +197,7 @@ export function scoreHour(
     label: 'Visibilidade',
     status: sv,
     penalty: pv,
-    detail: fog ? 'Nevoeiro' : h.visibility >= 20000 ? 'Acima de 20 km' : `${(h.visibility / 1000).toFixed(1)} km`,
+    detail: fog ? 'Nevoeiro' : Number.isNaN(h.visibility) ? 'Sem dado do modelo' : h.visibility >= 20000 ? 'Acima de 20 km' : `${(h.visibility / 1000).toFixed(1)} km`,
   });
 
   // Base de nuvens vs altitude planejada
@@ -290,12 +291,15 @@ export function scoreHour(
   if (space) {
     let pi = 0;
     let si: Verdict = 'go';
-    const parts: string[] = [`Cintilação ${space.scint}`];
-    if (space.scint === 'alto') {
-      pi += 14;
-      si = 'caution';
-    } else if (space.scint === 'moderado') {
-      pi += 5;
+    const parts: string[] = [];
+    if (space.scint) {
+      parts.push(`Cintilação ${space.scint.level} (S4 ${space.scint.s4.toFixed(2).replace('.', ',')})`);
+      if (space.scint.level === 'forte') {
+        pi += 14;
+        si = 'caution';
+      } else if (space.scint.level === 'moderada') {
+        pi += 5;
+      }
     }
     if (space.r >= 3) {
       pi += 12;
@@ -307,6 +311,7 @@ export function scoreHour(
     }
     if (space.r > 0) parts.push(`rádio R${space.r}`);
     if (space.s > 0) parts.push(`radiação S${space.s}`);
+    if (parts.length === 0) parts.push('Sem alertas da NOAA');
     factors.push({ id: 'ionosphere', label: 'Ionosfera', status: si, penalty: pi, detail: parts.join(' · ') });
   }
 
@@ -319,18 +324,18 @@ export function scoreHour(
     detail: h.isDay ? 'Dia claro' : 'Noite · exige luzes e autorização',
   });
 
-  // Espaço aéreo (estimativa por proximidade de aeródromos)
+  // Espaço aéreo: afastamento mínimo de aeródromos cadastrados (ICA 100-40 / DECEA)
   if (airspace && airspace.status !== 'clear') {
     const km = airspace.distanceM != null ? ` a ${(airspace.distanceM / 1000).toFixed(1).replace('.', ',')} km` : '';
     factors.push({
       id: 'airspace',
       label: 'Espaço aéreo',
-      status: 'caution',
-      penalty: airspace.status === 'critical' ? 32 : 6,
+      status: airspace.status === 'critical' ? 'nogo' : 'caution',
+      penalty: airspace.status === 'critical' ? 40 : 6,
       detail:
         airspace.status === 'critical'
-          ? `Zona estimada de ${airspace.icao}${km} · exige SARPAS`
-          : `Perto de ${airspace.icao}${km} · confira o SARPAS`,
+          ? `${airspace.icao}${km} · abaixo do afastamento do DECEA para ${altitude <= 30.48 ? 'até 30 m (5,6 km)' : 'acima de 30 m (9,3 km)'}`
+          : `${airspace.icao}${km} · voo permitido só até 30 m`,
     });
   }
 
@@ -425,11 +430,11 @@ export function usableFlightMinutes(drone: DroneProfile, windKmh: number, tempC:
 }
 
 /** Altitude-densidade aproximada (m) a partir de pressão de superfície e temperatura. */
-export function densityAltitude(surfacePressureHpa: number, tempC: number, elevationM: number) {
+export function densityAltitude(surfacePressureHpa: number, tempC: number) {
   // Altitude-pressão (ft) a partir da pressão de superfície
   const paFt = (1 - Math.pow(surfacePressureHpa / 1013.25, 0.190284)) * 145366.45;
   const isaC = 15 - 1.98 * (paFt / 1000);
   const daFt = paFt + 118.8 * (tempC - isaC);
   const da = daFt * 0.3048;
-  return Number.isFinite(da) ? da : elevationM;
+  return Number.isFinite(da) ? da : NaN;
 }

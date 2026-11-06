@@ -31,7 +31,7 @@ export function MapSurface(p: MapSurfaceProps) {
       onLongPress={(e) => p.onLongPress({ lat: e.nativeEvent.coordinate.latitude, lon: e.nativeEvent.coordinate.longitude })}>
       {p.showZones
         ? p.airports.map((a) => {
-            const r = zoneRadii(a);
+            const r = zoneRadii();
             return [
               <Circle
                 key={`${a.icao}-c`}
@@ -57,7 +57,7 @@ export function MapSurface(p: MapSurfaceProps) {
           key={a.icao}
           coordinate={{ latitude: a.lat, longitude: a.lon }}
           title={`${a.icao} · ${a.name}`}
-          description={a.city}
+          description={[a.city, a.uf].filter(Boolean).join(', ')}
           pinColor={c.nogo}
           onPress={() => p.onSelectAirport(a)}
         />

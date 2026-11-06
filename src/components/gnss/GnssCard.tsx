@@ -3,11 +3,11 @@ import { View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { InlineError, PressableScale, Skeleton, StatusDot, T } from '@/components/ui';
-import { useConstellations, useSpaceWeather } from '@/hooks/useConditions';
+import { S4_AVAILABLE, useConstellations, useScintillation, useSpaceWeather } from '@/hooks/useConditions';
 import { useNow } from '@/hooks/useNow';
 import { CONSTELLATIONS, fmtDop, snapshot } from '@/lib/gnss';
 import { kpLabel } from '@/lib/scoring';
-import { scintillationRisk } from '@/lib/spaceWeather';
+import { isS4Fresh, s4At } from '@/lib/spaceWeather';
 import { useApp } from '@/store/app';
 import { radius, space, useConstellationColors, useTheme, type Verdict } from '@/theme/tokens';
 
@@ -19,12 +19,14 @@ export function GnssCard({ lat, lon, elevation, kp }: { lat: number; lon: number
   const altitude = useApp((s) => s.altitude);
   const sats = useConstellations();
   const sw = useSpaceWeather();
+  const s4 = useScintillation();
   const now = useNow(60_000);
 
   const snap = sats.data ? snapshot(sats.data.sats, lat, lon, elevation + altitude, now, mask) : null;
-  const scint = scintillationRisk(new Date(now), lat, lon, sw.data?.f107 ?? null, kp);
+  const reading = s4At(s4.data, lat, lon);
+  const scint = isS4Fresh(reading, now) ? reading : null;
   const kpV: Verdict = kp >= 7 ? 'nogo' : kp >= 5 ? 'caution' : 'go';
-  const scV: Verdict = scint.level === 'alto' ? 'caution' : 'go';
+  const scV: Verdict = scint?.level === 'forte' ? 'caution' : 'go';
   const r = sw.data?.now.r ?? 0;
   const rV: Verdict = r >= 3 ? 'caution' : 'go';
 
@@ -77,7 +79,11 @@ export function GnssCard({ lat, lon, elevation, kp }: { lat: number; lon: number
 
       <View style={{ gap: space.sm }}>
         <Row v={kpV} label="Geomagnetismo" value={`Kp ${kp.toFixed(1).replace('.', ',')} · ${kpLabel(kp)}`} />
-        <Row v={scV} label="Cintilação" value={`${cap(scint.level)} agora`} />
+        <Row
+          v={scV}
+          label="Cintilação (INPE)"
+          value={scint ? `${cap(scint.level)} · S4 ${scint.s4.toFixed(2).replace('.', ',')}` : !S4_AVAILABLE ? 'Só no app' : s4.isLoading ? '…' : 'Sem medição'}
+        />
         <Row v={rV} label="Rádio (erupções)" value={sw.data ? (r > 0 ? `R${r}` : 'Calmo') : '—'} />
       </View>
     </PressableScale>

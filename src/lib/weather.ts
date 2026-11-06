@@ -148,32 +148,41 @@ export async function fetchForecast(lat: number, lon: number, signal?: AbortSign
     const v = H[k]?.[i];
     return v == null || Number.isNaN(v) ? fallback : (v as number);
   };
-  const hours: Hour[] = H.time.map((t, i) => ({
-    time: parseLocal(t, off),
-    temp: n('temperature_2m', i),
-    humidity: n('relative_humidity_2m', i),
-    dewPoint: n('dew_point_2m', i),
-    apparent: n('apparent_temperature', i),
-    precipProb: n('precipitation_probability', i),
-    precip: n('precipitation', i),
-    code: n('weather_code', i),
-    cloud: n('cloud_cover', i),
-    cloudLow: n('cloud_cover_low', i),
-    visibility: n('visibility', i, 24000),
-    wind10: n('wind_speed_10m', i),
-    wind80: n('wind_speed_80m', i, n('wind_speed_10m', i) * 1.25),
-    wind120: n('wind_speed_120m', i, n('wind_speed_10m', i) * 1.35),
-    wind180: n('wind_speed_180m', i, n('wind_speed_10m', i) * 1.45),
-    dir10: n('wind_direction_10m', i),
-    dir80: n('wind_direction_80m', i, n('wind_direction_10m', i)),
-    dir120: n('wind_direction_120m', i, n('wind_direction_10m', i)),
-    dir180: n('wind_direction_180m', i, n('wind_direction_10m', i)),
-    gust10: n('wind_gusts_10m', i),
-    isDay: n('is_day', i) === 1,
-    pressure: n('surface_pressure', i, 1013),
-    cape: n('cape', i),
-    uv: n('uv_index', i),
-  }));
+  // Sem valores inventados: se um nível de vento faltar, usa o nível real logo abaixo.
+  const hours: Hour[] = H.time.map((t, i) => {
+    const w10 = n('wind_speed_10m', i);
+    const w80 = n('wind_speed_80m', i, w10);
+    const w120 = n('wind_speed_120m', i, w80);
+    const d10 = n('wind_direction_10m', i);
+    const d80 = n('wind_direction_80m', i, d10);
+    const d120 = n('wind_direction_120m', i, d80);
+    return {
+      time: parseLocal(t, off),
+      temp: n('temperature_2m', i),
+      humidity: n('relative_humidity_2m', i),
+      dewPoint: n('dew_point_2m', i),
+      apparent: n('apparent_temperature', i),
+      precipProb: n('precipitation_probability', i),
+      precip: n('precipitation', i),
+      code: n('weather_code', i),
+      cloud: n('cloud_cover', i),
+      cloudLow: n('cloud_cover_low', i),
+      visibility: n('visibility', i, NaN),
+      wind10: w10,
+      wind80: w80,
+      wind120: w120,
+      wind180: n('wind_speed_180m', i, w120),
+      dir10: d10,
+      dir80: d80,
+      dir120: d120,
+      dir180: n('wind_direction_180m', i, d120),
+      gust10: n('wind_gusts_10m', i),
+      isDay: n('is_day', i) === 1,
+      pressure: n('surface_pressure', i, NaN),
+      cape: n('cape', i),
+      uv: n('uv_index', i),
+    };
+  });
 
   const D = r.daily;
   const dn = (k: string, i: number) => Number(D[k]?.[i] ?? 0);
@@ -191,15 +200,13 @@ export async function fetchForecast(lat: number, lon: number, signal?: AbortSign
     daylightSec: dn('daylight_duration', i),
   }));
 
-  // "current" do Open-Meteo não traz vento em altitude: combinamos com a hora vigente.
+  // "current" do Open-Meteo não traz vento em altitude: os níveis de 80–180 m vêm da hora vigente, sem ajuste.
   const now = Date.now();
   let idx = hours.findIndex((h) => h.time.getTime() > now) - 1;
   if (idx < 0) idx = 0;
   const base = hours[idx];
   const C = r.current;
   const c = (k: string, fb: number) => (C[k] == null ? fb : Number(C[k]));
-  const w10 = c('wind_speed_10m', base.wind10);
-  const ratio = base.wind10 > 0.5 ? w10 / base.wind10 : 1;
   const current: Hour = {
     ...base,
     time: new Date(now),
@@ -210,10 +217,7 @@ export async function fetchForecast(lat: number, lon: number, signal?: AbortSign
     code: c('weather_code', base.code),
     cloud: c('cloud_cover', base.cloud),
     pressure: c('surface_pressure', base.pressure),
-    wind10: w10,
-    wind80: base.wind80 * ratio,
-    wind120: base.wind120 * ratio,
-    wind180: base.wind180 * ratio,
+    wind10: c('wind_speed_10m', base.wind10),
     dir10: c('wind_direction_10m', base.dir10),
     gust10: c('wind_gusts_10m', base.gust10),
     isDay: c('is_day', base.isDay ? 1 : 0) === 1,

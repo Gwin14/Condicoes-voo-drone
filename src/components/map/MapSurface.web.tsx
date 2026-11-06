@@ -44,7 +44,7 @@ export function MapSurface(p: MapSurfaceProps) {
           <Line x1={0} y1={cx} x2={size} y2={cx} stroke={c.separator} />
           {p.airports.map((a) => {
             const pt = project(a.lat, a.lon);
-            const r = zoneRadii(a);
+            const r = zoneRadii();
             return (
               <G key={a.icao}>
                 {p.showZones ? (

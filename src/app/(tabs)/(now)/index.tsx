@@ -159,7 +159,7 @@ export default function NowScreen() {
         <Card style={{ backgroundColor: 'transparent', paddingHorizontal: space.xs }}>
           <T v="caption" tone="tertiary">
             O Teto é uma ferramenta de apoio. Antes de voar, confirme a autorização no SARPAS (DECEA), o cadastro no SISANT
-            (ANAC) e a homologação na Anatel. Dados: Open-Meteo, NOAA SWPC, CelesTrak e aviationweather.gov.
+            (ANAC) e a homologação na Anatel. Dados: Open-Meteo, NOAA SWPC, CelesTrak, aviationweather.gov, ANAC (aeródromos) e INPE/EMBRACE (cintilação).
           </T>
         </Card>
       </View>

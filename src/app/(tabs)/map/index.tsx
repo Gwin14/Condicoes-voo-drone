@@ -9,7 +9,7 @@ import { Icon, type IconName } from '@/components/Icon';
 import { MapSurface } from '@/components/map/MapSurface';
 import type { LatLon } from '@/components/map/types';
 import { Button, StatusPill, T } from '@/components/ui';
-import { useConditions } from '@/hooks/useConditions';
+import { useAerodromes, useConditions } from '@/hooks/useConditions';
 import { useActiveLocation } from '@/hooks/useLocation';
 import { airspaceAt, nearbyAirports } from '@/lib/airports';
 import { cardinal, fmtDistance, fmtSpeed } from '@/lib/format';
@@ -33,10 +33,13 @@ export default function MapScreen() {
   const [recenterKey, setRecenterKey] = useState(0);
 
   const center = location ?? FALLBACK;
-  const airports = nearbyAirports(center.lat, center.lon, 150);
+  const altitude = useApp((s) => s.altitude);
+  const aerodromes = useAerodromes();
+  // Cadastro completo tem ~4.400 aeródromos: no mapa, os 60 mais próximos.
+  const airports = nearbyAirports(aerodromes, center.lat, center.lon, 150, altitude).slice(0, 60);
   const here = useConditions(center.lat, center.lon);
   const point = useConditions(selected?.lat, selected?.lon);
-  const pointAirspace = selected ? airspaceAt(selected.lat, selected.lon) : null;
+  const pointAirspace = selected ? airspaceAt(aerodromes, selected.lat, selected.lon, altitude) : null;
   // A tab bar do iOS flutua sobre o mapa; no Android o conteúdo termina acima dela.
   const bottomOffset = process.env.EXPO_OS === 'ios' ? insets.bottom + 64 : process.env.EXPO_OS === 'web' ? 88 : space.lg;
 
@@ -217,9 +220,9 @@ export default function MapScreen() {
               />
               <T v="footnote" tone="secondary" style={{ flex: 1 }} numberOfLines={2}>
                 {pointAirspace.status === 'critical'
-                  ? `Dentro da zona estimada de ${pointAirspace.nearest.icao}`
+                  ? `${pointAirspace.nearest.icao} a ${fmtDistance(pointAirspace.nearest.distance)} · abaixo do afastamento do DECEA`
                   : pointAirspace.status === 'caution'
-                    ? `Perto de ${pointAirspace.nearest.icao} · ${fmtDistance(pointAirspace.nearest.distance)}`
+                    ? `${pointAirspace.nearest.icao} a ${fmtDistance(pointAirspace.nearest.distance)} · só até 30 m (DECEA)`
                     : `${pointAirspace.nearest.icao} a ${fmtDistance(pointAirspace.nearest.distance)}`}
               </T>
             </View>

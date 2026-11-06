@@ -58,7 +58,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "update:aerodromes": "node scripts/update-aerodromes.ts"
   },
   "private": true
 }

@@ -155,7 +155,8 @@ export const DRONES: DroneProfile[] = [
     id: 'matrice350',
     name: 'Matrice 350 RTK',
     brand: 'DJI',
-    maxWind: 54,
+    // DJI: resistência máxima ao vento de 12 m/s.
+    maxWind: 43,
     flightTime: 55,
     cruiseSpeed: 61,
     weightG: 6470,

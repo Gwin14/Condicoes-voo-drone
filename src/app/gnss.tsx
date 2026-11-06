@@ -6,18 +6,18 @@ import { SkyPlot } from '@/components/gnss/SkyPlot';
 import { Icon, type IconName } from '@/components/Icon';
 import { Segmented } from '@/components/Segmented';
 import { Card, EmptyState, InlineError, SectionHeader, Skeleton, StatusPill, T } from '@/components/ui';
-import { useConstellations, useForecast, useKp, useSpaceWeather } from '@/hooks/useConditions';
+import { S4_AVAILABLE, useConstellations, useForecast, useKp, useScintillation, useSpaceWeather } from '@/hooks/useConditions';
 import { useActiveLocation } from '@/hooks/useLocation';
 import { useNow } from '@/hooks/useNow';
 import { fmtHour, fmtTime, fmtWeekday } from '@/lib/format';
 import { CONSTELLATIONS, type Constellation, fmtDop, satellitePositions, snapshot } from '@/lib/gnss';
 import { kpLabel } from '@/lib/scoring';
-import { scaleText, scintillationRisk, type ScintLevel } from '@/lib/spaceWeather';
+import { isS4Fresh, s4At, scaleText, type ScintLevel } from '@/lib/spaceWeather';
 import { useApp } from '@/store/app';
 import { radius, space, useConstellationColors, useTheme, type Verdict, verdictColor } from '@/theme/tokens';
 
 const MASKS = [5, 10, 15, 20];
-const scintVerdict: Record<ScintLevel, Verdict> = { baixo: 'go', moderado: 'caution', alto: 'nogo' };
+const scintVerdict: Record<ScintLevel, Verdict> = { fraca: 'go', moderada: 'caution', forte: 'nogo' };
 
 export default function GnssScreen() {
   const { c } = useTheme();
@@ -28,6 +28,7 @@ export default function GnssScreen() {
   const sats = useConstellations();
   const sw = useSpaceWeather();
   const kp = useKp();
+  const s4 = useScintillation();
   const mask = useApp((s) => s.gnssMask);
   const altitude = useApp((s) => s.altitude);
   const set = useApp((s) => s.set);
@@ -53,12 +54,9 @@ export default function GnssScreen() {
   const selected = sel != null ? timeline[sel] : null;
 
   const kpNow = kp.data?.now ?? 0;
-  const scintHours = Array.from({ length: 24 }).map((_, i) => {
-    const t = new Date(now + i * 3600_000);
-    return { t, r: scintillationRisk(t, location.lat, location.lon, sw.data?.f107 ?? null, kpNow) };
-  });
-  const scintNow = scintHours[0].r;
-  const peak = scintHours.find((h) => h.r.level === 'alto') ?? scintHours.find((h) => h.r.level === 'moderado');
+  const reading = s4At(s4.data, location.lat, location.lon);
+  const scintNow = isS4Fresh(reading, now) ? reading : null;
+  const s4Age = reading ? Math.round((now - reading.time.getTime()) / 60_000) : null;
 
   const kpPoints = (kp.data?.points ?? []).filter((p) => p.time.getTime() > now - 24 * 3600_000).slice(0, 24);
 
@@ -226,34 +224,44 @@ export default function GnssScreen() {
       <View style={{ gap: space.sm }}>
         <SectionHeader title="Cintilação ionosférica" icon="globe" />
         <Card style={{ gap: space.md }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-            <View style={{ flex: 1, gap: 2 }}>
-              <T v="title3">Risco {scintNow.level} agora</T>
+          {!S4_AVAILABLE ? (
+            <T v="subhead" tone="secondary">
+              A medição do INPE só pode ser baixada pelo app no celular: o servidor não permite acesso pelo navegador.
+            </T>
+          ) : s4.isLoading ? (
+            <Skeleton style={{ height: 48 }} />
+          ) : s4.error && !s4.data ? (
+            <InlineError message="Mapa de cintilação do INPE indisponível agora." onRetry={() => s4.refetch()} />
+          ) : scintNow ? (
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <T v="title3" num>
+                    S4 {scintNow.s4.toFixed(2).replace('.', ',')} · cintilação {scintNow.level}
+                  </T>
+                  <T v="footnote" tone="secondary" num>
+                    Medido às {fmtTime(scintNow.time)} (há {s4Age} min)
+                    {scintNow.distanceKm > 30 ? ` · célula a ${Math.round(scintNow.distanceKm)} km` : ''}
+                  </T>
+                </View>
+                <StatusPill v={scintVerdict[scintNow.level]} label={scintNow.level} small />
+              </View>
               <T v="footnote" tone="secondary">
-                {scintNow.reason}
+                {scintNow.level === 'fraca'
+                  ? 'Sinal dos satélites estável na ionosfera sobre o seu local.'
+                  : 'O sinal dos satélites está oscilando: o receptor pode perder satélites e a precisão cai. Mantenha o drone próximo.'}
               </T>
-            </View>
-            <StatusPill v={scintVerdict[scintNow.level]} label={scintNow.level} small />
-          </View>
-          <View style={{ flexDirection: 'row', gap: 2 }}>
-            {scintHours.map((h) => (
-              <View key={h.t.getTime()} style={{ flex: 1, height: 18, borderRadius: 3, backgroundColor: verdictColor(c, scintVerdict[h.r.level]), opacity: h.r.level === 'baixo' ? 0.35 : 1 }} />
-            ))}
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            {[0, 6, 12, 18, 23].map((i) => (
-              <T key={i} v="caption2" tone="tertiary" num>
-                {fmtHour(scintHours[i].t)}
-              </T>
-            ))}
-          </View>
-          <T v="footnote" tone="secondary">
-            {peak
-              ? `Maior risco a partir de ${fmtHour(peak.t)}. ${scintNow.fromDipEq <= 25 ? 'Seu local fica na faixa da Anomalia Equatorial, onde bolhas de plasma após o pôr do sol fazem o GNSS perder satélites.' : ''}`
-              : 'Sem risco relevante nas próximas 24 h.'}
-          </T>
+            </>
+          ) : (
+            <T v="subhead" tone="secondary">
+              {reading
+                ? `A última medição perto daqui é das ${fmtTime(reading.time)} e já não representa o momento atual.`
+                : 'Nenhuma estação de monitoramento cobre este local agora. A rede do INPE cobre principalmente o Brasil.'}
+            </T>
+          )}
           <T v="caption" tone="tertiary">
-            Estimativa do Teto por posição magnética, hora local, estação e fluxo solar{sw.data?.f107 ? ` (F10.7 = ${Math.round(sw.data.f107)})` : ''}.
+            Índice S4 medido pela rede EMBRACE/INPE, IBGE, INCT GNSS-NavAer/UNESP e NSSC/CAS. Não existe previsão oficial de cintilação: a
+            temporada de bolhas de plasma no Brasil vai de setembro a março, após o pôr do sol.
           </T>
         </Card>
       </View>

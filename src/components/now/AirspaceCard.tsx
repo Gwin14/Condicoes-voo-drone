@@ -4,13 +4,13 @@ import { View } from 'react-native';
 import { Icon } from '@/components/Icon';
 import { Button, Card, StatusPill, T } from '@/components/ui';
 import { useMetar } from '@/hooks/useConditions';
-import type { NearbyAirport } from '@/lib/airports';
+import { kindLabel, type NearbyAirport } from '@/lib/airports';
 import { cardinal, fmtDistance, fmtSpeed, fmtTime, type SpeedUnit } from '@/lib/format';
 import { space, useTheme } from '@/theme/tokens';
 
 const catColor = { VFR: 'go', MVFR: 'caution', IFR: 'nogo', LIFR: 'nogo' } as const;
 
-/** Espaço aéreo: aeródromos próximos, zona estimada e METAR decodificado. */
+/** Espaço aéreo: aeródromos cadastrados próximos, afastamento do DECEA e METAR decodificado. */
 export function AirspaceCard({ airports, unit }: { airports: NearbyAirport[]; unit: SpeedUnit }) {
   const { c } = useTheme();
   const icaos = airports.slice(0, 3).map((a) => a.icao);
@@ -38,11 +38,12 @@ export function AirspaceCard({ airports, unit }: { airports: NearbyAirport[]; un
                     {a.icao} · {a.name}
                   </T>
                   <T v="footnote" tone="secondary" num>
-                    {fmtDistance(a.distance)} a {cardinal(a.bearing)} · {a.city}
+                    {fmtDistance(a.distance)} a {cardinal(a.bearing)} · {kindLabel[a.kind]}
+                    {a.city ? ` · ${a.city}` : ''}
                   </T>
                 </View>
                 {a.zone !== 'clear' ? (
-                  <StatusPill v={a.zone === 'critical' ? 'nogo' : 'caution'} label={a.zone === 'critical' ? 'Restrita' : 'Atenção'} small />
+                  <StatusPill v={a.zone === 'critical' ? 'nogo' : 'caution'} label={a.zone === 'critical' ? 'Restrita' : 'Até 30 m'} small />
                 ) : null}
               </View>
               {m ? (
@@ -67,12 +68,12 @@ export function AirspaceCard({ airports, unit }: { airports: NearbyAirport[]; un
         <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'center' }}>
           <Icon name="check" size={22} color={c.go} />
           <T v="subhead" tone="secondary" style={{ flex: 1 }}>
-            Nenhum aeródromo da base num raio de 60 km. Ainda assim, confira helipontos e áreas restritas no SARPAS.
+            Nenhum aeródromo cadastrado na ANAC num raio de 60 km. Ainda assim, confira helipontos e áreas restritas no SARPAS.
           </T>
         </View>
       )}
       <T v="caption" tone="tertiary">
-        Zonas são estimativas para orientação. A autorização oficial é a do DECEA.
+        Aeródromos: cadastro da ANAC. Afastamento: ICA 100-40 (3 NM até 30 m, 5 NM até 120 m). Todo voo precisa de autorização no SARPAS NG.
       </T>
       <Button
         title="Abrir SARPAS NG"

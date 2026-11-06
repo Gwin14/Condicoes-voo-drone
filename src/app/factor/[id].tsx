@@ -69,18 +69,18 @@ const COPY: Record<FactorId, { title: string; why: string; tips: string[] }> = {
   },
   ionosphere: {
     title: 'Ionosfera e rádio',
-    why: 'O Brasil fica sob a Anomalia de Ionização Equatorial. Depois do pôr do sol, principalmente de setembro a março, surgem bolhas de plasma que fazem o sinal dos satélites cintilar: o receptor perde satélites e a precisão cai. Erupções solares (escala R da NOAA) também degradam sinais de rádio no lado iluminado da Terra.',
+    why: 'O Brasil fica sob a Anomalia de Ionização Equatorial. Depois do pôr do sol, principalmente de setembro a março, surgem bolhas de plasma que fazem o sinal dos satélites cintilar: o receptor perde satélites e a precisão cai. O Teto mostra o índice S4 medido pela rede de monitoramento do INPE (fraca < 0,5; moderada até 0,8; forte acima). Erupções solares (escala R da NOAA) também degradam sinais de rádio no lado iluminado da Terra.',
     tips: [
-      'Prefira voar de dia em temporada de cintilação; entre 20h e 0h o risco é maior.',
-      'Com cintilação alta, mantenha o drone próximo e esteja pronto para o modo ATTI.',
+      'A cintilação só aparece na hora atual: não existe previsão oficial dela.',
+      'Com cintilação forte, mantenha o drone próximo e esteja pronto para o modo ATTI.',
       'Escala R3 ou maior: espere instabilidade no GNSS e no link de rádio.',
     ],
   },
   airspace: {
     title: 'Espaço aéreo',
-    why: 'Perto de aeródromos há rotas de aproximação e decolagem de aviões e helicópteros. O Teto estima uma zona por distância; quem autoriza de fato é o DECEA, pelo SARPAS NG.',
+    why: 'Pela ICA 100-40, o drone deve ficar a pelo menos 3 milhas náuticas (5,6 km) de um aeródromo para voar até 30 m de altura, e a 5 milhas náuticas (9,3 km) para voar entre 30 e 120 m. O Teto mede a distância até todos os aeródromos do cadastro oficial da ANAC. Quem autoriza o voo é o DECEA, pelo SARPAS NG.',
     tips: [
-      'Dentro da zona estimada, só voe com autorização aprovada no SARPAS.',
+      'Desde 1º de julho de 2026, todo voo de drone precisa de autorização no SARPAS NG, inclusive abaixo de 250 g.',
       'Helipontos não aparecem no mapa do Teto — confira no SARPAS.',
       'Consulte NOTAMs no AISWEB para restrições temporárias.',
     ],
