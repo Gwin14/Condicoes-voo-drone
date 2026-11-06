@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Drone de frente: a linha das hélices ecoa a barra do teto. -->
+  <g fill="#FFFFFF">
+    <rect x="232" y="548" width="200" height="26" rx="13"/>
+    <rect x="592" y="548" width="200" height="26" rx="13"/>
+    <rect x="320" y="560" width="24" height="56" rx="12"/>
+    <rect x="680" y="560" width="24" height="56" rx="12"/>
+    <rect x="300" y="600" width="424" height="40" rx="20"/>
+    <rect x="428" y="584" width="168" height="124" rx="48"/>
+  </g>
+  <g stroke="#FFFFFF" stroke-width="24" stroke-linecap="round" fill="none">
+    <path d="M444 684 L404 792 M580 684 L620 792"/>
+  </g>
+</svg>

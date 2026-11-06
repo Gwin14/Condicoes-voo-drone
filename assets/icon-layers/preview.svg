@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <image href="0-fundo.svg" width="1024" height="1024"/>
+  <image href="1-teto.svg" width="1024" height="1024"/>
+  <image href="2-subida.svg" width="1024" height="1024" opacity="0.8"/>
+  <image href="3-drone.svg" width="1024" height="1024"/>
+  <image href="4-gimbal.svg" width="1024" height="1024"/>
+</svg>

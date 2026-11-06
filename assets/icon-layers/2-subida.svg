@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Trajetória de subida: pontos que afinam ao se aproximar do teto (haste do T). -->
+  <circle cx="512" cy="326" r="12" fill="#FFFFFF"/>
+  <circle cx="512" cy="398" r="16" fill="#FFFFFF"/>
+  <circle cx="512" cy="476" r="20" fill="#FFFFFF"/>
+</svg>

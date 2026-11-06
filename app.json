@@ -8,7 +8,7 @@
     "scheme": "teto",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/teto.icon",
       "bundleIdentifier": "app.teto.drone",
       "supportsTablet": false,
       "infoPlist": {
@@ -19,7 +19,7 @@
     "android": {
       "package": "app.teto.drone",
       "adaptiveIcon": {
-        "backgroundColor": "#0E1116",
+        "backgroundColor": "#113396",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"

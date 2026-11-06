@@ -1,0 +1,62 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.10297,0.19702,0.56592,1.00000",
+      "display-p3:0.41094,0.57152,0.89982,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "hidden" : true,
+          "image-name" : "0-fundo.svg",
+          "name" : "0-fundo"
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.3
+      }
+    },
+    {
+      "layers" : [
+        {
+          "image-name" : "4-gimbal.png",
+          "name" : "4-gimbal"
+        },
+        {
+          "image-name" : "3-drone.png",
+          "name" : "3-drone"
+        },
+        {
+          "image-name" : "2-subida.png",
+          "name" : "2-subida"
+        },
+        {
+          "image-name" : "1-teto.png",
+          "name" : "1-teto"
+        }
+      ],
+      "name" : "Group",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.3
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}
