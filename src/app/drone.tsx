@@ -26,9 +26,16 @@ export default function DroneSheet() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.background }}>
-      <SheetHeader title="Seu drone" left={null} right="OK" onRight={() => router.back()} />
-      <ScrollView contentContainerStyle={{ padding: space.lg, paddingTop: 0, gap: space.md, paddingBottom: 48 }}>
+    // ScrollView como raiz da sheet, com o cabeçalho fixo (sticky) e fundo opaco:
+    // a lista rola por baixo do título, nunca por cima dele.
+    <ScrollView
+      style={{ flex: 1, backgroundColor: c.background }}
+      stickyHeaderIndices={[0]}
+      contentContainerStyle={{ paddingBottom: 48 }}>
+      <View style={{ backgroundColor: c.background, zIndex: 1 }}>
+        <SheetHeader title="Seu drone" left={null} right="OK" onRight={() => router.back()} />
+      </View>
+      <View style={{ paddingHorizontal: space.lg, gap: space.md }}>
         <T v="footnote" tone="secondary" style={{ paddingHorizontal: space.xs }}>
           O score usa os limites oficiais do fabricante: resistência ao vento, faixa de temperatura e autonomia.
         </T>
@@ -82,7 +89,7 @@ export default function DroneSheet() {
             {custom ? 'Editar drone personalizado' : 'Criar perfil personalizado'}
           </T>
         </Pressable>
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 }
