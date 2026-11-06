@@ -1,14 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import { airspaceAt, type Airport, nearbyAirports, rowsToAirports, SNAPSHOT_AIRPORTS } from '@/lib/airports';
+import { airspaceAt, type Airport, haversine, nearbyAirports, rowsToAirports, SNAPSHOT_AIRPORTS } from '@/lib/airports';
 import { ANAC_PRIVATE_URL, ANAC_PUBLIC_URL, decodeLatin1, parseAnacCsv } from '@/lib/anac';
 import { findDrone } from '@/lib/drones';
 import { fmtSpeed } from '@/lib/format';
 import { densityAltitude, findWindows, scoreHour, usableFlightMinutes } from '@/lib/scoring';
 import { fetchAllConstellations, snapshot } from '@/lib/gnss';
 import { fetchS4Map, fetchSpaceWeather, isS4Fresh, s4At } from '@/lib/spaceWeather';
-import { fetchForecast, fetchKp, fetchMetar, kpAt } from '@/lib/weather';
+import { fetchForecast, fetchKp, fetchMetar, fetchObservationsNear, kpAt } from '@/lib/weather';
 import { useApp } from '@/store/app';
 
 export function useForecast(lat?: number, lon?: number) {
@@ -36,6 +36,25 @@ export function useMetar(icaos: string[]) {
     queryFn: ({ signal }) => fetchMetar(icaos, signal),
     enabled: icaos.length > 0,
     staleTime: 10 * 60_000,
+    retry: 1,
+  });
+}
+
+/** Raio e idade máximos para uma estação METAR valer como "condição atual" no ponto. */
+const OBS_RADIUS_KM = 25;
+const OBS_MAX_AGE_MIN = 90;
+
+/**
+ * METARs das estações num raio de 25 km: corrigem nevoeiro, chuva e trovoada da hora corrente.
+ * Só no app nativo: o aviationweather.gov não libera CORS para navegadores (na web vale só o modelo).
+ */
+export function useObservations(lat?: number, lon?: number) {
+  return useQuery({
+    queryKey: ['metar-near', lat?.toFixed(2), lon?.toFixed(2)],
+    queryFn: ({ signal }) => fetchObservationsNear(lat!, lon!, OBS_RADIUS_KM, signal),
+    enabled: lat != null && lon != null && process.env.EXPO_OS !== 'web',
+    staleTime: 10 * 60_000,
+    refetchInterval: 15 * 60_000,
     retry: 1,
   });
 }
@@ -120,6 +139,7 @@ export function useConditions(lat?: number, lon?: number) {
   const sats = useConstellations();
   const space = useSpaceWeather();
   const s4 = useScintillation();
+  const metarNear = useObservations(lat, lon);
   const aerodromes = useAerodromes();
   const mask = useApp((s) => s.gnssMask);
   const drone = useDrone();
@@ -161,7 +181,25 @@ export function useConditions(lat?: number, lon?: number) {
       return scoreHour(h, drone, altitude, kpv, fmt, { airspace: air, ...extraAt(h.time) });
     });
     const nowKp = kp.data?.now ?? 0;
-    const now = scoreHour(f.current, drone, altitude, nowKp, fmt, { airspace: air, ...extraAt(f.current.time) });
+    // Estação mais próxima com observação recente: só a hora corrente usa o que foi medido.
+    const obs = (metarNear.data ?? [])
+      .filter((m) => f.fetchedAt - m.obsTime.getTime() <= OBS_MAX_AGE_MIN * 60_000)
+      .map((m) => ({ m, d: haversine(f.lat, f.lon, m.lat, m.lon) }))
+      .filter((x) => x.d <= OBS_RADIUS_KM * 1000)
+      .sort((a, b) => a.d - b.d)[0];
+    const obsIn = obs
+      ? {
+          icao: obs.m.icao,
+          distanceM: obs.d,
+          visibilityM: obs.m.visibilityM,
+          fog: obs.m.fog,
+          thunder: obs.m.thunder,
+          rain: obs.m.rain,
+          heavyRain: obs.m.heavyRain,
+          gustKmh: obs.m.gustKmh,
+        }
+      : undefined;
+    const now = scoreHour(f.current, drone, altitude, nowKp, fmt, { airspace: air, obs: obsIn, ...extraAt(f.current.time) });
     // Janelas consideram só o tempo: a restrição de espaço aéreo vale para o dia todo.
     const weatherOnly = f.hours.map((h) => {
       const kpv = kpAt(kp.data, h.time);
@@ -172,7 +210,7 @@ export function useConditions(lat?: number, lon?: number) {
     const usable = usableFlightMinutes(drone, now.windAlt, f.current.temp);
     const da = densityAltitude(f.current.pressure, f.current.temp);
     return { forecast: f, now, hours, windows, airspace, airports, usable, densityAlt: da };
-  }, [forecast.data, kp.data, sats.data, space.data, s4.data, aerodromes, mask, drone, altitude, unit]);
+  }, [forecast.data, kp.data, sats.data, space.data, s4.data, metarNear.data, aerodromes, mask, drone, altitude, unit]);
 
   return {
     data,

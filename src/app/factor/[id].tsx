@@ -25,7 +25,7 @@ const COPY: Record<FactorId, { title: string; why: string; tips: string[] }> = {
   },
   gust: {
     title: 'Rajadas e turbulência',
-    why: 'Rajadas são picos curtos de vento. Uma diferença grande entre vento médio e rajada indica ar turbulento, que desestabiliza a imagem e pode derrubar drones leves.',
+    why: 'Rajadas são picos curtos de vento. O Teto soma a parcela turbulenta medida a 10 m ao vento médio da sua altitude e compara com o limite do fabricante, com tolerância de 20% para picos de poucos segundos. Ar turbulento desestabiliza a imagem e pode derrubar drones leves.',
     tips: ['Evite voar a sotavento de prédios, morros e árvores.', 'Use o modo Cine/Tripé apenas com vento calmo.'],
   },
   precip: {
@@ -35,7 +35,7 @@ const COPY: Record<FactorId, { title: string; why: string; tips: string[] }> = {
   },
   visibility: {
     title: 'Visibilidade',
-    why: 'As regras brasileiras exigem voo em linha de visada (VLOS). Névoa, fumaça e nevoeiro reduzem quanto você consegue enxergar o drone.',
+    why: 'As regras brasileiras exigem voo em linha de visada (VLOS). Névoa, fumaça e nevoeiro reduzem quanto você consegue enxergar o drone. A visibilidade prevista pelo modelo erra bastante, então na hora atual o Teto usa a medida da estação METAR mais próxima (até 25 km) quando ela existe.',
     tips: ['Com visibilidade abaixo de 3 km, encurte a distância do voo.', 'Nevoeiro também atrapalha os sensores de obstáculo.'],
   },
   cloudbase: {
@@ -87,7 +87,7 @@ const COPY: Record<FactorId, { title: string; why: string; tips: string[] }> = {
   },
   storm: {
     title: 'Instabilidade',
-    why: 'CAPE alto indica atmosfera instável, com chance de trovoadas, rajadas fortes e descargas elétricas.',
+    why: 'CAPE mede a energia disponível para nuvens de tempestade. Sozinho ele não garante trovoada (no Brasil passa de 1500 em muitas noites limpas), então o Teto só aponta risco de trovoada quando há CAPE alto junto com chance de chuva alta, trovoada prevista pelo modelo ou trovoada observada numa estação próxima.',
     tips: ['Se ouvir trovões, pouse imediatamente.', 'Frentes de rajada chegam antes da chuva.'],
   },
 };

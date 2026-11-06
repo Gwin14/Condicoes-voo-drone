@@ -360,6 +360,69 @@ export async function fetchMetar(icaos: string[], signal?: AbortSignal): Promise
   }));
 }
 
+/* ---------------------------------------------------- Observação próxima */
+
+export type NearObservation = {
+  icao: string;
+  lat: number;
+  lon: number;
+  obsTime: Date;
+  raw: string;
+  windKmh: number | null;
+  gustKmh: number | null;
+  /** Metros, lidos do METAR bruto (9999 e CAVOK = 10 000). */
+  visibilityM: number | null;
+  fog: boolean;
+  thunder: boolean;
+  rain: boolean;
+  heavyRain: boolean;
+};
+
+/** Decodifica visibilidade e tempo presente do corpo do METAR (sem a parte RMK). */
+export function decodeMetarWeather(raw: string) {
+  const body = raw.replace(/\sRMK\b.*$/, '');
+  const toks = body.split(/\s+/).slice(2);
+  let visibilityM: number | null = null;
+  if (/\bCAVOK\b/.test(body)) visibilityM = 10000;
+  else {
+    const v = toks.find((t) => /^\d{4}$/.test(t));
+    if (v) visibilityM = v === '9999' ? 10000 : Number(v);
+  }
+  // Grupos de tempo presente: intensidade/proximidade + descritor + fenômeno (ex.: -TSRA, VCSH, BR).
+  const wx = toks.filter((t) => /^(\+|-|VC)?(MI|BC|PR|DR|BL|SH|TS|FZ)?(DZ|RA|SN|SG|PL|GR|GS|UP|BR|FG|FU|HZ|SA|DU|SQ|FC)*$/.test(t) && /[A-Z]{2}/.test(t) && !/^(NSC|NCD|SKC|CLR|NOSIG|AUTO|COR|CAVOK)$/.test(t));
+  const here = wx.filter((t) => !t.startsWith('VC'));
+  return {
+    visibilityM,
+    fog: here.some((t) => /FG/.test(t) && !/^(MI|BC|PR)FG$/.test(t)),
+    thunder: wx.some((t) => /TS/.test(t)),
+    rain: here.some((t) => /(RA|DZ)/.test(t)),
+    heavyRain: here.some((t) => /^\+.*RA/.test(t)),
+  };
+}
+
+/** METARs das estações num raio de `km` (consulta por caixa no aviationweather.gov). */
+export async function fetchObservationsNear(lat: number, lon: number, km: number, signal?: AbortSignal): Promise<NearObservation[]> {
+  const dLat = km / 111;
+  const dLon = km / (111 * Math.max(0.2, Math.cos((lat * Math.PI) / 180)));
+  const bbox = [lat - dLat, lon - dLon, lat + dLat, lon + dLon].map((v) => v.toFixed(3)).join(',');
+  const r = await getJson<Record<string, unknown>[]>(`https://aviationweather.gov/api/data/metar?bbox=${bbox}&format=json`, signal);
+  return r
+    .filter((m) => typeof m.lat === 'number' && typeof m.lon === 'number' && typeof m.obsTime === 'number')
+    .map((m) => {
+      const raw = String(m.rawOb ?? '');
+      return {
+        icao: String(m.icaoId ?? ''),
+        lat: m.lat as number,
+        lon: m.lon as number,
+        obsTime: new Date((m.obsTime as number) * 1000),
+        raw,
+        windKmh: typeof m.wspd === 'number' ? m.wspd * 1.852 : null,
+        gustKmh: typeof m.wgst === 'number' ? m.wgst * 1.852 : null,
+        ...decodeMetarWeather(raw),
+      };
+    });
+}
+
 /* -------------------------------------------------------------- WMO codes */
 
 export function weatherLabel(code: number) {
