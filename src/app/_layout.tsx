@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { BackgroundSync } from '@/components/BackgroundSync';
@@ -23,10 +23,13 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const { c, isDark } = useTheme();
+  const onboarded = useApp((s) => s.onboarded);
+  const [hydrated, setHydrated] = useState(() => useApp.persist.hasHydrated());
 
   useEffect(() => {
-    // Mantém o splash até o estado persistido ser reidratado (sem flash de estado vazio).
-    const done = () => SplashScreen.hideAsync().catch(() => {});
+    // Mantém o splash até o estado persistido ser reidratado: sem flash do onboarding
+    // para quem já concluiu, nem de estado vazio.
+    const done = () => setHydrated(true);
     if (useApp.persist.hasHydrated()) done();
     const unsub = useApp.persist.onFinishHydration(done);
     const t = setTimeout(done, 1500);
@@ -36,6 +39,10 @@ export default function RootLayout() {
     };
   }, []);
 
+  useEffect(() => {
+    if (hydrated) SplashScreen.hideAsync().catch(() => {});
+  }, [hydrated]);
+
   useEffect(() => addResponseListener((url) => router.navigate(url as never)), []);
 
   const base = isDark ? DarkTheme : DefaultTheme;
@@ -44,12 +51,18 @@ export default function RootLayout() {
     colors: { ...base.colors, primary: c.accent, background: c.background, card: c.card, text: c.label, border: c.separator },
   };
 
+  if (!hydrated) return null;
+
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: c.background }}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider value={navTheme}>
           <BackgroundSync />
           <Stack screenOptions={{ contentStyle: { backgroundColor: c.background } }}>
+            <Stack.Protected guard={!onboarded}>
+              <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
+            </Stack.Protected>
+            <Stack.Protected guard={onboarded}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen
               name="location"
@@ -89,6 +102,7 @@ export default function RootLayout() {
                 headerShadowVisible: false,
               }}
             />
+            </Stack.Protected>
           </Stack>
         </ThemeProvider>
       </QueryClientProvider>

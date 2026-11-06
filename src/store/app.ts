@@ -41,6 +41,8 @@ export type FlightLog = FlightSession & {
 };
 
 type State = {
+  /** Concluiu (ou pulou) o onboarding. Porta de mão única. */
+  onboarded: boolean;
   speedUnit: SpeedUnit;
   tempUnit: TempUnit;
   droneId: string;
@@ -79,6 +81,7 @@ const uid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(
 export const useApp = create<State & Actions>()(
   persist(
     (set, get) => ({
+      onboarded: false,
       speedUnit: 'kmh',
       tempUnit: 'c',
       droneId: DEFAULT_DRONE_ID,
@@ -123,7 +126,13 @@ export const useApp = create<State & Actions>()(
     {
       name: 'teto-app-v1',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 1,
+      version: 2,
+      // Quem já usava o app (v1) não vê o onboarding.
+      migrate: (persisted, version) => {
+        const st = (persisted ?? {}) as Partial<State>;
+        if (version < 2) st.onboarded = true;
+        return st as State & Actions;
+      },
     }
   )
 );
